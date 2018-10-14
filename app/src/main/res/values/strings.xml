@@ -1,0 +1,12 @@
+<resources>
+    <string name="app_name">BSM</string>
+    <string name="login_button">Zaloguj</string>
+    <string name="safe_note_label">Bezpieczny notatnik</string>
+    <string name="enter_password_hint">Enter password</string>
+    <string name="enter_login_hint">Enter login</string>
+    <string name="title_activity_enter_data">EnterDataActivity</string>
+    <string name="enter_data_field">Wprowadź notatkę</string>
+    <string name="save_data_button">Zapisz dane</string>
+    <string name="encryptedData" />
+    <string name="register_button">Zarejestruj</string>
+</resources>
