@@ -9,4 +9,5 @@
     <string name="save_data_button">Zapisz dane</string>
     <string name="encryptedData" />
     <string name="register_button">Zarejestruj</string>
+    <string name="change_password_button">Zmień Hasło</string>
 </resources>

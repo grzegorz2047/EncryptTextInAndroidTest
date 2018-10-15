@@ -1,6 +1,5 @@
 package pl.bsm.securenotepad;
 
-import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
@@ -13,29 +12,19 @@ import android.widget.EditText;
 
 import org.spongycastle.jce.provider.BouncyCastleProvider;
 import org.spongycastle.pqc.jcajce.provider.BouncyCastlePQCProvider;
-import org.spongycastle.util.encoders.Hex;
 
-import java.security.GeneralSecurityException;
 import java.security.Security;
 import java.util.Timer;
 import java.util.TimerTask;
 
-
-import javax.crypto.Cipher;
-import javax.crypto.SecretKey;
-import javax.crypto.spec.IvParameterSpec;
-import javax.crypto.spec.SecretKeySpec;
-
-import java.security.Security;
-
-
-import static java.nio.charset.StandardCharsets.UTF_8;
+import pl.bsm.securenotepad.exceptions.IncorrectPassword;
 
 public class MainActivity extends AppCompatActivity {
 
+    private final AuthenticationProvider authenticationProvider = new AuthenticationProvider();
     Button loginButton;
-    Button registerButton;
     EditText passwordField;
+    private final DecryptEncryptNaive decryptEncryptNaive = new DecryptEncryptNaive();
 
     static {
         Security.insertProviderAt(new org.spongycastle.jce.provider.BouncyCastleProvider(), 1);
@@ -48,6 +37,7 @@ public class MainActivity extends AppCompatActivity {
 
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        getSupportActionBar().hide();
 
         loginButton = findViewById(R.id.loginButton);
         passwordField = findViewById(R.id.passwordField);
@@ -56,39 +46,53 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 byte[] passwordBytes = passwordField.getText().toString().getBytes();
-                if (passwordBytes.length >= 32) {
-                    ActionBar supportActionBar = getSupportActionBar();
-                    supportActionBar.setTitle("Za długie hasło");
-                    supportActionBar.show();
-                    new Timer().schedule(new TimerTask() {
-                        @Override
-                        public void run() {
-                            getSupportActionBar().hide();
-                        }
-                    }, 5000L);
+                if (notValidated(passwordBytes)) {
+                    showActionMsg("Za długie hasło");
                 } else {
+                    Utils utils = new Utils();
+                    String inputPasswordValue = passwordField.getText().toString();
+                    String filledPasswordToMatch = MainActivity.this.authenticationProvider.stretchPasswordToMatchLengthUnsafe(inputPasswordValue);
 
-                    createAndSetNewActivity();
+
+                    SharedPreferences data = utils.getAppSharedUserData(MainActivity.this.getApplicationContext(), getString(R.string.encryptedData));
+                    try {
+                        String decryptedTextPlain = decryptEncryptNaive.decryptToPlainText(filledPasswordToMatch, data, "TEXT");
+                        createAndSetNewActivity(filledPasswordToMatch, decryptedTextPlain);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    } catch (IncorrectPassword incorrectPassword) {
+                        showActionMsg("Niepoprawne haslo!");
+                    }
                 }
             }
         });
     }
 
-    private SharedPreferences getEncryptedData() {
-        Context context = MainActivity.this.getApplicationContext();
-        String encryptedData = getString(R.string.encryptedData);
-        return context.getSharedPreferences(encryptedData, Context.MODE_PRIVATE);
+    private void showActionMsg(String text) {
+        ActionBar supportActionBar = getSupportActionBar();
+        supportActionBar.setTitle(text);
+        supportActionBar.show();
+        new Timer().schedule(new TimerTask() {
+            @Override
+            public void run() {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        getSupportActionBar().hide();
+                    }
+                });
+            }
+        }, 5000L);
     }
 
-    private void createAndSetNewActivity() {
+    private boolean notValidated(byte[] passwordBytes) {
+        return passwordBytes.length >= 32;
+    }
+
+    private void createAndSetNewActivity(String filledPasswordToMatch, String decryptedTextPlain) {
         Intent notesIntent = new Intent(MainActivity.this.getApplicationContext(), EnterDataActivity.class);
-        String passwordValue = passwordField.getText().toString();
-        int resultLength = 32;
-        notesIntent.putExtra("password", supplyText(resultLength - passwordValue.length()) + passwordValue);
+        notesIntent.putExtra("password", filledPasswordToMatch);
+        notesIntent.putExtra("notes", decryptedTextPlain);
         startActivity(notesIntent);
-    }
-
-    private String supplyText(int remaining) {
-        return "1qaz3edc5tgb7ujm6yhn4rfv2wsx0opl".substring(0, remaining);
     }
 }
