@@ -1,5 +1,6 @@
 package pl.bsm.securenotepad;
 
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
@@ -47,46 +48,30 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View view) {
                 byte[] passwordBytes = passwordField.getText().toString().getBytes();
                 if (notValidated(passwordBytes)) {
-                    showActionMsg("Za długie hasło");
+                    showActionMsg("Haslo min 5 znakow i max 25", getSupportActionBar());
                 } else {
                     Utils utils = new Utils();
                     String inputPasswordValue = passwordField.getText().toString();
                     String filledPasswordToMatch = MainActivity.this.authenticationProvider.stretchPasswordToMatchLengthUnsafe(inputPasswordValue);
 
-
-                    SharedPreferences data = utils.getAppSharedUserData(MainActivity.this.getApplicationContext(), getString(R.string.encryptedData));
+                    Context applicationContext = MainActivity.this.getApplicationContext();
+                    SharedPreferences data = utils.getAppSharedUserData(applicationContext, getString(R.string.encryptedData));
                     try {
                         String decryptedTextPlain = decryptEncryptNaive.decryptToPlainText(filledPasswordToMatch, data, "TEXT");
                         createAndSetNewActivity(filledPasswordToMatch, decryptedTextPlain);
                     } catch (Exception e) {
-                        e.printStackTrace();
+                        createAndSetNewActivity(filledPasswordToMatch, "");
                     } catch (IncorrectPassword incorrectPassword) {
-                        showActionMsg("Niepoprawne haslo!");
+                        showActionMsg("Niepoprawne haslo!", getSupportActionBar());
                     }
                 }
             }
         });
     }
 
-    private void showActionMsg(String text) {
-        ActionBar supportActionBar = getSupportActionBar();
-        supportActionBar.setTitle(text);
-        supportActionBar.show();
-        new Timer().schedule(new TimerTask() {
-            @Override
-            public void run() {
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        getSupportActionBar().hide();
-                    }
-                });
-            }
-        }, 5000L);
-    }
 
     private boolean notValidated(byte[] passwordBytes) {
-        return passwordBytes.length >= 32;
+        return passwordBytes.length >= 25 || passwordBytes.length < 5;
     }
 
     private void createAndSetNewActivity(String filledPasswordToMatch, String decryptedTextPlain) {
@@ -94,5 +79,20 @@ public class MainActivity extends AppCompatActivity {
         notesIntent.putExtra("password", filledPasswordToMatch);
         notesIntent.putExtra("notes", decryptedTextPlain);
         startActivity(notesIntent);
+    }
+    public void showActionMsg(String text, final ActionBar actionBar) {
+        actionBar.setTitle(text);
+        actionBar.show();
+        new Timer().schedule(new TimerTask() {
+            @Override
+            public void run() {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        actionBar.hide();
+                    }
+                });
+            }
+        }, 5000L);
     }
 }

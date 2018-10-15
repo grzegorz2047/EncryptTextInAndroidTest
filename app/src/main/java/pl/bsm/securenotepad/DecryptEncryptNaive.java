@@ -41,7 +41,7 @@ public class DecryptEncryptNaive {
                 e.printStackTrace();
             }
         }
-        throw new Exception("Could not decrypt");
+        throw new Exception("Nothing to encrypt");
     }
 
     void encryptAndSaveNotes(String notesToEncryptBytes, SharedPreferences.Editor editor, String password, String encryptedTextPath) throws GeneralSecurityException {
