@@ -14,6 +14,8 @@ import android.widget.EditText;
 import org.spongycastle.jce.provider.BouncyCastleProvider;
 import org.spongycastle.pqc.jcajce.provider.BouncyCastlePQCProvider;
 
+import java.io.UnsupportedEncodingException;
+import java.security.NoSuchAlgorithmException;
 import java.security.Security;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -52,15 +54,22 @@ public class MainActivity extends AppCompatActivity {
                 } else {
                     Utils utils = new Utils();
                     String inputPasswordValue = passwordField.getText().toString();
-                    String filledPasswordToMatch = MainActivity.this.authenticationProvider.stretchPasswordToMatchLengthUnsafe(inputPasswordValue);
+                    byte[] filledPasswordToMatch = null;
+                    try {
+                        filledPasswordToMatch = MainActivity.this.authenticationProvider.stretchPasswordToMatchLengthUnsafe(inputPasswordValue.getBytes("UTF-8"));
+                    } catch (NoSuchAlgorithmException e) {
+                        e.printStackTrace();
+                    } catch (UnsupportedEncodingException e) {
+                        e.printStackTrace();
+                    }
 
                     Context applicationContext = MainActivity.this.getApplicationContext();
                     SharedPreferences data = utils.getAppSharedUserData(applicationContext, getString(R.string.encryptedData));
                     try {
-                        String decryptedTextPlain = decryptEncryptNaive.decryptToPlainText(filledPasswordToMatch, data, "TEXT");
-                        createAndSetNewActivity(filledPasswordToMatch, decryptedTextPlain);
+                        String decryptedTextPlain = decryptEncryptNaive.decryptToPlainText(data, "TEXT", filledPasswordToMatch);
+                        createAndSetNewActivity(decryptedTextPlain, filledPasswordToMatch);
                     } catch (Exception e) {
-                        createAndSetNewActivity(filledPasswordToMatch, "");
+                        createAndSetNewActivity("", filledPasswordToMatch);
                     } catch (IncorrectPassword incorrectPassword) {
                         showActionMsg("Niepoprawne haslo!", getSupportActionBar());
                     }
@@ -74,9 +83,9 @@ public class MainActivity extends AppCompatActivity {
         return passwordBytes.length >= 25 || passwordBytes.length < 5;
     }
 
-    private void createAndSetNewActivity(String filledPasswordToMatch, String decryptedTextPlain) {
+    private void createAndSetNewActivity(String decryptedTextPlain, byte[] toMatchBytes) {
         Intent notesIntent = new Intent(MainActivity.this.getApplicationContext(), EnterDataActivity.class);
-        notesIntent.putExtra("password", filledPasswordToMatch);
+        notesIntent.putExtra("password", toMatchBytes);
         notesIntent.putExtra("notes", decryptedTextPlain);
         startActivity(notesIntent);
     }

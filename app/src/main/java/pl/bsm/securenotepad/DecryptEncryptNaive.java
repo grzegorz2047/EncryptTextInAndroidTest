@@ -23,8 +23,8 @@ public class DecryptEncryptNaive {
     DecryptEncryptNaive() {
     }
 
-    String decryptToPlainText(String password, SharedPreferences data, String encryptedTextPath) throws Exception, IncorrectPassword {
-        SecretKey secretKey = defineKey(password.getBytes());
+    String decryptToPlainText(SharedPreferences data, String encryptedTextPath, byte[] passwordBytes) throws Exception, IncorrectPassword {
+        SecretKey secretKey = defineKey(passwordBytes);
         String decryptedPlain;
         if (data.contains(encryptedTextPath)) {
             try {
@@ -44,8 +44,8 @@ public class DecryptEncryptNaive {
         throw new Exception("Nothing to encrypt");
     }
 
-    void encryptAndSaveNotes(String notesToEncryptBytes, SharedPreferences.Editor editor, String password, String encryptedTextPath) throws GeneralSecurityException {
-        SecretKey secretKey = defineKey(password.getBytes());
+    void encryptAndSaveNotes(String notesToEncryptBytes, SharedPreferences.Editor editor, String encryptedTextPath, byte[] passwordBytes) throws GeneralSecurityException {
+        SecretKey secretKey = defineKey(passwordBytes);
         notesToEncryptBytes += this.verifier;
         byte[][] bytes = ctrEncrypt(secretKey, notesToEncryptBytes.getBytes());
         //encrypt

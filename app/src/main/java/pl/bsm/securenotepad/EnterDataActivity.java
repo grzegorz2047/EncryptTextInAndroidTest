@@ -1,6 +1,5 @@
 package pl.bsm.securenotepad;
 
-import android.content.Context;
 import android.content.SharedPreferences;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
@@ -9,7 +8,9 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 
+import java.io.UnsupportedEncodingException;
 import java.security.GeneralSecurityException;
+import java.security.NoSuchAlgorithmException;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -23,7 +24,7 @@ public class EnterDataActivity extends AppCompatActivity {
     private Button changePasswordButton;
     private EditText notes;
     private EditText changePasswordField;
-    private String passwordStretched;
+    private byte[] passwordStretched;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -31,7 +32,7 @@ public class EnterDataActivity extends AppCompatActivity {
         setContentView(R.layout.activity_enter_data);
 
         final String notesText = getIntent().getExtras().getString("notes");
-        passwordStretched = getIntent().getExtras().getString("password");
+        passwordStretched = getIntent().getExtras().getByteArray("password");
 
         saveButton = findViewById(R.id.saveButton);
         changePasswordButton = findViewById(R.id.changePasswordButton);
@@ -41,11 +42,17 @@ public class EnterDataActivity extends AppCompatActivity {
             public void onClick(View view) {
                 String inputPasswordValue = changePasswordField.getText().toString();
                 if (inputPasswordValue.length() >= 5 && inputPasswordValue.length() < 25) {
-                    passwordStretched = EnterDataActivity.this.authenticationProvider.stretchPasswordToMatchLengthUnsafe(inputPasswordValue);
+                    try {
+                        passwordStretched = EnterDataActivity.this.authenticationProvider.stretchPasswordToMatchLengthUnsafe(inputPasswordValue.getBytes("UTF-8"));
+                    } catch (NoSuchAlgorithmException e) {
+                        e.printStackTrace();
+                    } catch (UnsupportedEncodingException e) {
+                        e.printStackTrace();
+                    }
                     String notesToEncrypt = notes.getText().toString();
                     SharedPreferences data = utils.getAppSharedUserData(EnterDataActivity.this.getApplicationContext(), EnterDataActivity.this.getString(R.string.encryptedData));
                     try {
-                        decryptEncryptNaive.encryptAndSaveNotes(notesToEncrypt, data.edit(), passwordStretched, "TEXT");
+                        decryptEncryptNaive.encryptAndSaveNotes(notesToEncrypt, data.edit(), "TEXT", passwordStretched);
                     } catch (GeneralSecurityException e) {
                         showActionMsg("Nie udalo sie zmienic hasla i zaszyfrowac!", getSupportActionBar());
                     }
@@ -64,7 +71,7 @@ public class EnterDataActivity extends AppCompatActivity {
                 SharedPreferences data = utils.getAppSharedUserData(EnterDataActivity.this.getApplicationContext(), EnterDataActivity.this.getString(R.string.encryptedData));
                 try {
                     String notesToEncrypt = notes.getText().toString();
-                    decryptEncryptNaive.encryptAndSaveNotes(notesToEncrypt, data.edit(), passwordStretched, "TEXT");
+                    decryptEncryptNaive.encryptAndSaveNotes(notesToEncrypt, data.edit(), "TEXT", passwordStretched);
                 } catch (GeneralSecurityException e) {
                     showActionMsg("Nie udalo sie zapisac!", getSupportActionBar());
                 }
