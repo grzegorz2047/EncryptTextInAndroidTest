@@ -23,7 +23,7 @@ public class AuthenticationProvider {
     byte[] stretchPasswordToMatchLengthUnsafe(byte[] bytes) throws NoSuchAlgorithmException, UnsupportedEncodingException {
         MessageDigest sha = MessageDigest.getInstance("SHA-1");
         byte[] key = sha.digest(bytes);
-        key = Arrays.copyOf(key, 32);
+        key = Arrays.copyOf(key, AES_LENGTH);
         return key;
     }
 

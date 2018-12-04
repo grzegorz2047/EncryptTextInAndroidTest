@@ -1,7 +1,10 @@
 package pl.bsm.securenotepad;
 
+import android.app.Activity;
 import android.content.SharedPreferences;
+import android.os.Build;
 import android.support.annotation.NonNull;
+import android.support.annotation.RequiresApi;
 
 import org.spongycastle.util.encoders.Hex;
 
@@ -19,16 +22,18 @@ import pl.bsm.securenotepad.exceptions.IncorrectPassword;
 public class DecryptEncryptNaive {
 
     private final String verifier = "<<!!>>VERIFIED<<!!>>";
-
+    private FingerprintService fingerprintService = new FingerprintService();
     DecryptEncryptNaive() {
     }
 
-    String decryptToPlainText(SharedPreferences data, String encryptedTextPath, byte[] passwordBytes) throws Exception, IncorrectPassword {
+    @RequiresApi(api = Build.VERSION_CODES.M)
+    String decryptToPlainText(SharedPreferences data, String encryptedTextPath, byte[] passwordBytes, Activity activity) throws Exception, IncorrectPassword {
         SecretKey secretKey = defineKey(passwordBytes);
         String decryptedPlain;
+
         if (data.contains(encryptedTextPath)) {
             try {
-
+                boolean b = fingerprintService.testFinger(activity, secretKey);
                 decryptedPlain = decryptData(data, secretKey, "TEXT");
                 ;
                 int i = decryptedPlain.indexOf(this.verifier);

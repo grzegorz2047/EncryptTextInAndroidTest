@@ -1,20 +1,29 @@
 package pl.bsm.securenotepad;
 
+import android.Manifest;
+import android.app.KeyguardManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
+import android.hardware.fingerprint.FingerprintManager;
+import android.os.Build;
 import android.os.Bundle;
+import android.support.annotation.RequiresApi;
+import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.Toast;
 
 
 import org.spongycastle.jce.provider.BouncyCastleProvider;
 import org.spongycastle.pqc.jcajce.provider.BouncyCastlePQCProvider;
 
 import java.io.UnsupportedEncodingException;
+import java.security.KeyStore;
 import java.security.NoSuchAlgorithmException;
 import java.security.Security;
 import java.util.Timer;
@@ -29,10 +38,11 @@ public class MainActivity extends AppCompatActivity {
     EditText passwordField;
     private final DecryptEncryptNaive decryptEncryptNaive = new DecryptEncryptNaive();
 
-    static {
+     static {
         Security.insertProviderAt(new org.spongycastle.jce.provider.BouncyCastleProvider(), 1);
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.M)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         Security.addProvider(new BouncyCastleProvider());
@@ -41,7 +51,6 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         getSupportActionBar().hide();
-
         loginButton = findViewById(R.id.loginButton);
         passwordField = findViewById(R.id.passwordField);
 
@@ -66,7 +75,7 @@ public class MainActivity extends AppCompatActivity {
                     Context applicationContext = MainActivity.this.getApplicationContext();
                     SharedPreferences data = utils.getAppSharedUserData(applicationContext, getString(R.string.encryptedData));
                     try {
-                        String decryptedTextPlain = decryptEncryptNaive.decryptToPlainText(data, "TEXT", filledPasswordToMatch);
+                        String decryptedTextPlain = decryptEncryptNaive.decryptToPlainText(data, "TEXT", filledPasswordToMatch, MainActivity.this);
                         createAndSetNewActivity(decryptedTextPlain, filledPasswordToMatch);
                     } catch (Exception e) {
                         createAndSetNewActivity("", filledPasswordToMatch);
